@@ -1,0 +1,33 @@
+{
+  "name": "es-changelog",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "bin": "dist/cli.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "test": "cross-env NODE_ENV=test && tape -r ts-node/register tests/**/*.test.ts | tap-diff",
+    "postinstall": "tsc"
+  },
+  "author": "Rhys van der Waerden <rhys@effortstar.games>",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@types/args": "^5.0.3",
+    "@types/lodash": "^4.17.4",
+    "@types/node": "^20.12.12",
+    "args": "^5.0.3",
+    "date-fns": "^3.6.0",
+    "lodash": "^4.17.21",
+    "simple-git": "^3.24.0",
+    "strip-html-comments": "^1.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "@openaddresses/tap-diff": "^1.0.0",
+    "@types/tape": "^5.6.4",
+    "cross-env": "^7.0.3",
+    "prettier": "^3.2.5",
+    "tape": "^5.7.5"
+  }
+}
