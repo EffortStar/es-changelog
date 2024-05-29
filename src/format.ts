@@ -1,6 +1,8 @@
 import { Category, Entry } from "./types";
-import { format as formatDate } from "date-fns";
 
+export function formatDate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 export function formatChangelog(
   version: string,
   date: Date,
@@ -8,7 +10,7 @@ export function formatChangelog(
 ) {
   const changes = formatCategories(categories);
   return `## ${version}
-Date: ${formatDate(date, "yyyy-MM-dd")}
+Date: ${formatDate(date)}
 ${changes === "" ? "_No changes_" : changes}`;
 }
 
