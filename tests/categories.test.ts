@@ -92,7 +92,6 @@ test("flattenCategories", (t) => {
             },
           ],
         },
-        ,
       ],
     },
     {
