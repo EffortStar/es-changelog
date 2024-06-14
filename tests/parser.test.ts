@@ -260,6 +260,33 @@ entry that is wrapped over multiple lines
   ],
 );
 
+testParsePr(
+  "leading comments",
+  `Some stuff here
+And here
+<!-- es-changelog-version 1 -->
+
+## Changelog
+
+### 😈️ Category Name
+- Entry
+`,
+  [
+    {
+      emoji: "😈️",
+      title: "Category Name",
+      children: [
+        {
+          description:
+            "Entry",
+          mentions: [],
+          children: [],
+        },
+      ],
+    },
+  ],
+);
+
 function testNormalizeBullets(
   testName: string,
   input: string,

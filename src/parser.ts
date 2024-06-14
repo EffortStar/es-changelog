@@ -10,7 +10,7 @@ export class ParseError extends Error {
 }
 
 export function normalizeBullets(lines: string[]): string[] {
-  const text = lines.filter(l => l.trim() !== "").join("\n");
+  const text = lines.filter((l) => l.trim() !== "").join("\n");
   return text.replace(/^([^#].*)$\s*([^#\s-])/gm, "$1 $2").split("\n");
 }
 
@@ -50,14 +50,23 @@ export function parseEntry(line: string): [Entry, number] {
 }
 
 export function parsePr(description: string): Category[] {
-  let [versionLine, ...lines] = description.trim().split("\n");
+  let lines = description.trim().split("\n");
 
-  lines = stripHtmlComments(lines.join("\n"))
+  let version = null as number | null;
+  let versionIndex = -1;
+  for (var i = 0; i < lines.length; i++) {
+    version = parseVersion(lines[i]);
+    if (version !== null) {
+      versionIndex = i;
+      break;
+    }
+  }
+
+  lines = stripHtmlComments(lines.slice(versionIndex + 1).join("\n"))
     .split("\n")
     .filter((l) => l !== "");
 
   // Get version
-  const version = parseVersion(versionLine);
   if (version === null) {
     throw new ParseError("No changelog version found");
   }
@@ -66,7 +75,7 @@ export function parsePr(description: string): Category[] {
   }
 
   const changelogIndex = lines.findIndex((line) =>
-    line.startsWith("## Changelog"),
+    line.startsWith("## Changelog")
   );
   if (changelogIndex == -1) {
     throw new ParseError("No changelog section found");
@@ -80,10 +89,9 @@ export function parsePr(description: string): Category[] {
     changelogLength = lines.length - changelogStart;
   }
 
-  const changelogLines = normalizeBullets(lines.slice(
-    changelogStart,
-    changelogStart + changelogLength,
-  ));
+  const changelogLines = normalizeBullets(
+    lines.slice(changelogStart, changelogStart + changelogLength)
+  );
 
   return changelogLines
     .reduce(
@@ -121,7 +129,7 @@ export function parsePr(description: string): Category[] {
           title: "Uncategorized",
           children: [],
         },
-      ] as Category[],
+      ] as Category[]
     )
     .filter((e) => e.children.length > 0);
 }
