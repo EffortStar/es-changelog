@@ -9,6 +9,7 @@ export class ParseError extends Error {
   }
 }
 
+/** Merge lines so that bulleted entries are never contain a newline **/
 export function normalizeBullets(lines: string[]): string[] {
   const text = lines.filter((l) => l.trim() !== "").join("\n");
   return text.replace(/^([^#].*)$\s*([^#\s-])/gm, "$1 $2").split("\n");
@@ -50,6 +51,9 @@ export function parseEntry(line: string): [Entry, number] {
 }
 
 export function parsePr(description: string): Category[] {
+  // Fix input error.
+  description = description.replaceAll("// -", "- //");
+
   let lines = description.trim().split("\n");
 
   let version = null as number | null;
