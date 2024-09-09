@@ -20,3 +20,32 @@ export function flattenCategories(
 
   return [...map.values()];
 }
+
+export function stripPrivateEntries(categories: readonly Readonly<Entry>[]): Readonly<Entry>[] {
+  return categories.reduce((acc, entry) => {
+    if (entry.description.startsWith("//")) {
+      return acc;
+    }
+    acc.push({
+      description: entry.description,
+      mentions: entry.mentions,
+      children: stripPrivateEntries(entry.children),
+    })
+    return acc;
+  }, [] as Readonly<Entry>[]);
+}
+
+export function stripPrivateFromCategories(categories: readonly Readonly<Category>[]): Readonly<Category>[] {
+  var result = [];
+  for (const { title, emoji, children } of categories) {
+    var c = stripPrivateEntries(children);
+    if (c.length > 0) {
+      result.push({
+        title: title,
+        emoji: emoji,
+        children: c,
+      });
+    }
+  }
+  return result;
+}

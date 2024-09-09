@@ -2,7 +2,7 @@ import args from "args";
 import { simpleGit } from "simple-git";
 import { ParseError, parsePr } from "./parser";
 import { Category } from "./types";
-import { flattenCategories } from "./categories";
+import { flattenCategories, stripPrivateEntries, stripPrivateFromCategories } from "./categories";
 import { formatChangelog } from "./format";
 import { execSync } from "child_process";
 import { prependToFile } from "./file";
@@ -10,6 +10,7 @@ import { prependToFile } from "./file";
 args
   .option("from", "The version to start from")
   .option("to", "The version to end on") // See https://github.com/steveukx/git-js/issues/995
+  .option("public", "Include internal changes", false)
   .option(
     "out",
     "The path to prepend the changelog to. Otherwise the change will be sent to stdout.",
@@ -27,7 +28,7 @@ function getVersionDate(version: string): Date {
   return new Date(dateIso);
 }
 
-async function getChangelogEntry(from: string, to: string, suppressErrors: boolean): Promise<string> {
+async function getChangelogEntry(from: string, to: string, includePrivate: boolean, suppressErrors: boolean): Promise<string> {
   const date = getVersionDate(to);
   const log = await simpleGit().log({
     from,
@@ -53,11 +54,17 @@ async function getChangelogEntry(from: string, to: string, suppressErrors: boole
     return acc;
   }, [] as Category[]);
 
-  return formatChangelog(to, date, flattenCategories(categories));
+  let flattened = flattenCategories(categories);
+
+  if (!includePrivate) {
+    flattened = stripPrivateFromCategories(flattened);
+  }
+
+  return formatChangelog(to, date, flattened);
 }
 
 export async function main() {
-  const { from, to, suppressErrors, out } = args.parse(process.argv);
+  const { from, to, suppressErrors, out, public: pub } = args.parse(process.argv);
 
   if (from === undefined || to === undefined) {
     console.error("Both 'from' and 'to' are required.");
@@ -65,7 +72,7 @@ export async function main() {
     return;
   }
 
-  const changelog = await getChangelogEntry(from, to, suppressErrors);
+  const changelog = await getChangelogEntry(from, to, !pub, suppressErrors);
 
   if (out === undefined) {
     console.log(changelog);
