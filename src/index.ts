@@ -31,10 +31,16 @@ function getVersionDate(version: string): Date {
 async function getChangelogEntry(from: string, to: string, includePrivate: boolean, suppressErrors: boolean): Promise<string> {
   const date = getVersionDate(to);
   const log = await simpleGit().log({
-    from,
-    to,
     multiLine: true,
     "--merges": true,
+
+    // Do not use `to`/`from` options here, instead exclude all children of the
+    // `from` commit so that we can handle the case where the release commit is
+    // on a separate branch.
+    //
+    // https://stackoverflow.com/a/61039591/317135
+    [to]: true,
+    [`^${from}`]: true,
   } as any);
 
   const categories = log.all.reduce((acc, { message, body, hash, date }) => {
