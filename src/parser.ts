@@ -33,11 +33,17 @@ export function parseCategory(line: string): Category | null {
 }
 
 export function parseEntry(line: string): [Entry, number] {
-  const matches = line.match(/^( *)(-?) *([^\]]+)(?:$|\[([^\[]*)])/);
+  const matches = line.match(/^( *)(-?)(.*?)(?:$|\[([^\[]*)])$/);
   if (matches === null) {
     throw new ParseError(`Failed to parse entry: '${line}'`);
   }
-  const [, indent, bullet, description, mentions] = matches;
+  const [, indent, bullet, description, mentions] = matches as (string | undefined)[];
+  if (indent === undefined) {
+    throw new ParseError(`Failed to parse entry indent: '${line}'`);
+  }
+  if (description === undefined) {
+    throw new ParseError(`Failed to parse entry description: '${line}'`);
+  }
   const depth = bullet === "" ? 0 : Math.floor(indent.length / 2);
   return [
     {

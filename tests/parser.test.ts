@@ -287,6 +287,38 @@ And here
   ],
 );
 
+testParsePr(
+  "square brackets early in line",
+  `<!-- es-changelog-version 1 -->
+
+## Changelog
+### 😈️ Category Name
+- [Foo] Some text here
+- [Boo] Some text here [bob]
+`,
+  [
+    {
+      emoji: "😈️",
+      title: "Category Name",
+      children: [
+        {
+          description:
+            "[Foo] Some text here",
+          mentions: [],
+          children: [],
+        },
+        {
+          description:
+            "[Boo] Some text here",
+          mentions: ["bob"],
+          children: [],
+        },
+      ],
+    },
+  ],
+);
+
+
 function testNormalizeBullets(
   testName: string,
   input: string,
