@@ -9,10 +9,24 @@ export class ParseError extends Error {
   }
 }
 
-/** Merge lines so that bulleted entries are never contain a newline **/
+/** Merge wrapped lines so that entries never contain a newline. */
 export function normalizeBullets(lines: string[]): string[] {
-  const text = lines.filter((l) => l.trim() !== "").join("\n");
-  return text.replace(/^([^#].*)$\s*([^#\s-])/gm, "$1 $2").split("\n");
+  return lines
+    .filter((line) => line.trim() !== "")
+    .reduce((normalized, line) => {
+      const previous = last(normalized);
+      if (
+        previous !== undefined &&
+        !previous.startsWith("#") &&
+        !line.startsWith("#") &&
+        !/^\s*-/.test(line)
+      ) {
+        normalized[normalized.length - 1] = `${previous} ${line.trim()}`;
+      } else {
+        normalized.push(line);
+      }
+      return normalized;
+    }, [] as string[]);
 }
 
 export function parseVersion(line: string): number | null {

@@ -261,6 +261,34 @@ entry that is wrapped over multiple lines
 );
 
 testParsePr(
+  "wrapped multiline entry from a commit message",
+  `
+<!-- es-changelog-version 1 -->
+
+## Changelog
+
+### 😓 Gameplay
+- Added eight new bellusect weapons: the pool of weapons was too small,
+and the new set features several weapons which excel at crowd control
+and mobility to help with the hordes of insects.
+`,
+  [
+    {
+      emoji: "😓",
+      title: "Gameplay",
+      children: [
+        {
+          description:
+            "Added eight new bellusect weapons: the pool of weapons was too small, and the new set features several weapons which excel at crowd control and mobility to help with the hordes of insects.",
+          mentions: [],
+          children: [],
+        },
+      ],
+    },
+  ],
+);
+
+testParsePr(
   "leading comments",
   `Some stuff here
 And here
@@ -277,8 +305,7 @@ And here
       title: "Category Name",
       children: [
         {
-          description:
-            "Entry",
+          description: "Entry",
           mentions: [],
           children: [],
         },
@@ -302,14 +329,12 @@ testParsePr(
       title: "Category Name",
       children: [
         {
-          description:
-            "[Foo] Some text here",
+          description: "[Foo] Some text here",
           mentions: [],
           children: [],
         },
         {
-          description:
-            "[Boo] Some text here",
+          description: "[Boo] Some text here",
           mentions: ["bob"],
           children: [],
         },
@@ -317,7 +342,6 @@ testParsePr(
     },
   ],
 );
-
 
 function testNormalizeBullets(
   testName: string,
