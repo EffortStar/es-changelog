@@ -1,12 +1,9 @@
 {
-  "extends": "@tsconfig/node16/tsconfig.json",
+  "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
-    "moduleResolution": "Node16",
-    "outDir": "dist",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist"
   },
-  "exclude": [ "node_modules" ],
-  "include": [
-    "src/**/*.ts",
-    "bin/*.ts"
-  ]
+  "exclude": ["node_modules"],
+  "include": ["src/**/*.ts", "bin/*.ts"]
 }
