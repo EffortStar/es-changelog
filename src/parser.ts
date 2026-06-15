@@ -1,6 +1,10 @@
 import { last } from "lodash";
+import MarkdownIt from "markdown-it";
 import { Category, Entry } from "./types";
 import { stripHtmlComments } from "./strip-html-comments";
+
+const markdown = new MarkdownIt();
+type MarkdownToken = ReturnType<MarkdownIt["parse"]>[number];
 
 export class ParseError extends Error {
   constructor(message: string) {
@@ -9,7 +13,7 @@ export class ParseError extends Error {
   }
 }
 
-/** Merge wrapped lines so that entries never contain a newline. */
+/** Repair wrapped commit-message lines before parsing the Markdown. */
 export function normalizeBullets(lines: string[]): string[] {
   return lines
     .filter((line) => line.trim() !== "")
@@ -51,7 +55,10 @@ export function parseEntry(line: string): [Entry, number] {
   if (matches === null) {
     throw new ParseError(`Failed to parse entry: '${line}'`);
   }
-  const [, indent, bullet, description, mentions] = matches as (string | undefined)[];
+  const [, indent, bullet, description, mentions] = matches as (
+    | string
+    | undefined
+  )[];
   if (indent === undefined) {
     throw new ParseError(`Failed to parse entry indent: '${line}'`);
   }
@@ -70,27 +77,84 @@ export function parseEntry(line: string): [Entry, number] {
   ];
 }
 
+function parseEntryText(text: string): Entry {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  const mentionMatch = normalized.match(/^(.*?)(?:\s+\[([^\[]*)])$/);
+
+  return {
+    description: (mentionMatch?.[1] ?? normalized).trim(),
+    mentions:
+      mentionMatch?.[2] == null
+        ? []
+        : mentionMatch[2].split(",").map((mention) => mention.trim()),
+    children: [],
+  };
+}
+
+function categoryFromHeading(heading: string): Category {
+  const normalized = heading.trim();
+  const [first, ...rest] = normalized.split(/\s+/);
+  const hasEmoji = first !== undefined && !/[\p{L}\p{N}]/u.test(first);
+
+  return {
+    emoji: hasEmoji ? first : "",
+    title: hasEmoji ? rest.join(" ") : normalized,
+    children: [],
+  };
+}
+
+function parseList(tokens: MarkdownToken[], start: number): [Entry[], number] {
+  const entries: Entry[] = [];
+  let index = start + 1;
+
+  while (index < tokens.length && tokens[index].type !== "bullet_list_close") {
+    if (tokens[index].type !== "list_item_open") {
+      index++;
+      continue;
+    }
+
+    const text: string[] = [];
+    const children: Entry[] = [];
+    index++;
+
+    while (index < tokens.length && tokens[index].type !== "list_item_close") {
+      const token = tokens[index];
+      if (token.type === "inline") {
+        text.push(token.content);
+      } else if (token.type === "bullet_list_open") {
+        const [nested, nextIndex] = parseList(tokens, index);
+        children.push(...nested);
+        index = nextIndex;
+        continue;
+      }
+      index++;
+    }
+
+    const entry = parseEntryText(text.join(" "));
+    entry.children = children;
+    entries.push(entry);
+    index++;
+  }
+
+  return [entries, index + 1];
+}
+
 export function parsePr(description: string): Category[] {
   // Fix input error.
   description = description.replaceAll("// -", "- //");
 
   let lines = description.trim().split("\n");
-
-  let version = null as number | null;
+  let version: number | null = null;
   let versionIndex = -1;
-  for (var i = 0; i < lines.length; i++) {
-    version = parseVersion(lines[i]);
+
+  for (let index = 0; index < lines.length; index++) {
+    version = parseVersion(lines[index]);
     if (version !== null) {
-      versionIndex = i;
+      versionIndex = index;
       break;
     }
   }
 
-  lines = stripHtmlComments(lines.slice(versionIndex + 1).join("\n"))
-    .split("\n")
-    .filter((l) => l !== "");
-
-  // Get version
   if (version === null) {
     throw new ParseError("No changelog version found");
   }
@@ -98,62 +162,61 @@ export function parsePr(description: string): Category[] {
     throw new ParseError(`Unsupported changelog version: ${version}`);
   }
 
-  const changelogIndex = lines.findIndex((line) =>
-    line.startsWith("## Changelog")
+  lines = stripHtmlComments(lines.slice(versionIndex + 1).join("\n")).split(
+    "\n",
   );
-  if (changelogIndex == -1) {
+
+  const tokens = markdown.parse(normalizeBullets(lines).join("\n"), {});
+  const categories: Category[] = [
+    {
+      emoji: "\u2753",
+      title: "Uncategorized",
+      children: [],
+    },
+  ];
+  let foundChangelog = false;
+  let inChangelog = false;
+
+  for (let index = 0; index < tokens.length; index++) {
+    const token = tokens[index];
+
+    if (token.type === "heading_open" && token.tag === "h2") {
+      const heading = tokens[index + 1]?.content.trim();
+      if (inChangelog) {
+        break;
+      }
+      inChangelog = heading === "Changelog";
+      foundChangelog ||= inChangelog;
+      index += 2;
+      continue;
+    }
+
+    if (!inChangelog) {
+      continue;
+    }
+
+    if (token.type === "heading_open") {
+      const heading = tokens[index + 1]?.content;
+      if (heading !== undefined) {
+        categories.push(categoryFromHeading(heading));
+      }
+      index += 2;
+    } else if (token.type === "bullet_list_open") {
+      const [entries, nextIndex] = parseList(tokens, index);
+      last(categories)!.children.push(...entries);
+      index = nextIndex - 1;
+    } else if (token.type === "paragraph_open") {
+      const text = tokens[index + 1]?.content;
+      if (text !== undefined) {
+        last(categories)!.children.push(parseEntryText(text));
+      }
+      index += 2;
+    }
+  }
+
+  if (!foundChangelog) {
     throw new ParseError("No changelog section found");
   }
 
-  const changelogStart = changelogIndex + 1;
-  let changelogLength = lines
-    .slice(changelogStart)
-    .findIndex((line) => line.startsWith("## "));
-  if (changelogLength == -1) {
-    changelogLength = lines.length - changelogStart;
-  }
-
-  const changelogLines = normalizeBullets(
-    lines.slice(changelogStart, changelogStart + changelogLength)
-  );
-
-  return changelogLines
-    .reduce(
-      (acc, line) => {
-        // Needed for an apparent CRLF issue. Don't trim the start because we
-        // care about indentation.
-        line = line.trimEnd();
-
-        if (line === "") {
-          // Do nothing
-        } else if (line.startsWith("#")) {
-          const category = parseCategory(line);
-          if (category !== null) {
-            acc.push(category);
-          }
-        } else {
-          const [entry, depth] = parseEntry(line);
-          let entries = last(acc)!.children;
-          for (let i = 0; i < depth; i++) {
-            const target = last(entries);
-            if (target === undefined) {
-              console.warn("Malformed changelog entry");
-              break;
-            } else {
-              entries = target.children;
-            }
-          }
-          entries.push(entry);
-        }
-        return acc;
-      },
-      [
-        {
-          emoji: "❓",
-          title: "Uncategorized",
-          children: [],
-        },
-      ] as Category[]
-    )
-    .filter((e) => e.children.length > 0);
+  return categories.filter((category) => category.children.length > 0);
 }
