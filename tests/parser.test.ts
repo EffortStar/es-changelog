@@ -5,7 +5,7 @@ import {
   parsePr,
   normalizeBullets,
 } from "../src/parser";
-import test from "tape";
+import { test } from "tap";
 import { Category } from "../src/types";
 
 test("parseVersion", (t) => {
@@ -16,12 +16,12 @@ test("parseVersion", (t) => {
 });
 
 test("parseCategory", (t) => {
-  t.deepEqual(parseCategory("# 😅 Some name"), {
+  t.same(parseCategory("# 😅 Some name"), {
     emoji: "😅",
     title: "Some name",
     children: [],
   });
-  t.deepEqual(parseCategory("##### No emoji"), {
+  t.same(parseCategory("##### No emoji"), {
     emoji: "",
     title: "No emoji",
     children: [],
@@ -30,23 +30,23 @@ test("parseCategory", (t) => {
 });
 
 test("parseEntry", (t) => {
-  t.deepEqual(parseEntry("       No bullet"), [
+  t.same(parseEntry("       No bullet"), [
     { description: "No bullet", mentions: [], children: [] },
     0,
   ]);
-  t.deepEqual(parseEntry("- Some description"), [
+  t.same(parseEntry("- Some description"), [
     { description: "Some description", mentions: [], children: [] },
     0,
   ]);
-  t.deepEqual(parseEntry(" - Oops"), [
+  t.same(parseEntry(" - Oops"), [
     { description: "Oops", mentions: [], children: [] },
     0,
   ]);
-  t.deepEqual(parseEntry("  - Blah"), [
+  t.same(parseEntry("  - Blah"), [
     { description: "Blah", mentions: [], children: [] },
     1,
   ]);
-  t.deepEqual(parseEntry("  - Blah    [Foo, Bar]"), [
+  t.same(parseEntry("  - Blah    [Foo, Bar]"), [
     { description: "Blah", mentions: ["Foo", "Bar"], children: [] },
     1,
   ]);
@@ -59,7 +59,7 @@ function testParsePr(
   result: readonly Readonly<Category>[],
 ) {
   test(`parsePr with ${inputDescription}`, (t) => {
-    t.deepEqual(parsePr(pr), result);
+    t.same(parsePr(pr), result);
     t.end();
   });
 }
@@ -349,7 +349,7 @@ function testNormalizeBullets(
   expected: readonly string[],
 ) {
   test(`normalizeBullets with ${testName}`, (t) => {
-    t.deepEqual(normalizeBullets(input.split("\n")), expected);
+    t.same(normalizeBullets(input.split("\n")), expected);
     t.end();
   });
 }

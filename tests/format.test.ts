@@ -1,4 +1,4 @@
-import test from "tape";
+import { test } from "tap";
 import { Category } from "../src/types";
 import { formatCategories } from "../src/format";
 
@@ -45,6 +45,5 @@ test("formatCategories", (t) => {
 `;
 
   t.equal(formatCategories(categories), expected);
-
   t.end();
 });

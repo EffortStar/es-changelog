@@ -1,4 +1,4 @@
-import test from "tape";
+import { test } from "tap";
 import { Category } from "../src/types";
 import { flattenCategories } from "../src/categories";
 
@@ -30,7 +30,6 @@ test("flattenCategories", (t) => {
             },
           ],
         },
-        ,
       ],
     },
   ] as Category[];
@@ -60,52 +59,51 @@ test("flattenCategories", (t) => {
     },
   ] as Category[];
 
-  t.deepEqual(flattenCategories([...a, ...b]), [
-    {
-      emoji: "🗺️",
-      title: "Level Generation",
-      children: [
-        {
-          description: "Level Gen 1",
-          mentions: [],
-          children: [],
-        },
-        {
-          description: "Level Gen 2",
-          mentions: [],
-          children: [],
-        },
-      ],
-    },
-    {
-      emoji: "🖼️",
-      title: "Art",
-      children: [
-        {
-          description: "Art 1",
-          mentions: [],
-          children: [
-            {
-              description: "Art 1.1",
-              mentions: [],
-              children: [],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      emoji: "📰️",
-      title: "Extra",
-      children: [
-        {
-          description: "Extra 1",
-          mentions: [],
-          children: [],
-        },
-      ],
-    },
+  t.same(flattenCategories([...a, ...b]), [
+      {
+        emoji: "🗺️",
+        title: "Level Generation",
+        children: [
+          {
+            description: "Level Gen 1",
+            mentions: [],
+            children: [],
+          },
+          {
+            description: "Level Gen 2",
+            mentions: [],
+            children: [],
+          },
+        ],
+      },
+      {
+        emoji: "🖼️",
+        title: "Art",
+        children: [
+          {
+            description: "Art 1",
+            mentions: [],
+            children: [
+              {
+                description: "Art 1.1",
+                mentions: [],
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        emoji: "📰️",
+        title: "Extra",
+        children: [
+          {
+            description: "Extra 1",
+            mentions: [],
+            children: [],
+          },
+        ],
+      },
   ]);
-
   t.end();
 });

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "ts-node src/index.ts",
-    "test": "cross-env NODE_ENV=test tape -r ts-node/register tests/**/*.test.ts",
+    "test": "cross-env NODE_ENV=test tap --disable-coverage --reporter=base tests/**/*.test.ts",
     "postinstall": "tsc"
   },
   "author": "Rhys van der Waerden <rhys@effortstar.games>",
@@ -29,9 +29,8 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "@types/tape": "^5.8.1",
     "cross-env": "^10.1.0",
     "prettier": "^3.8.4",
-    "tape": "^5.10.1"
+    "tap": "^21.7.4"
   }
 }
